@@ -156,10 +156,13 @@ func (s *schedulingThroughputMeasurement) gather(threshold float64) ([]measureme
 	throughputSummary := &schedulingThroughput{}
 	if length := len(s.schedulingThroughputs); length > 0 {
 		sort.Float64s(s.schedulingThroughputs)
+		throughputSummary.Perc01 = s.schedulingThroughputs[int(math.Ceil(float64(length*1)/100))-1]
+		throughputSummary.Perc10 = s.schedulingThroughputs[int(math.Ceil(float64(length*10)/100))-1]
 		throughputSummary.Perc50 = s.schedulingThroughputs[int(math.Ceil(float64(length*50)/100))-1]
 		throughputSummary.Perc90 = s.schedulingThroughputs[int(math.Ceil(float64(length*90)/100))-1]
 		throughputSummary.Perc99 = s.schedulingThroughputs[int(math.Ceil(float64(length*99)/100))-1]
 		throughputSummary.Max = s.schedulingThroughputs[length-1]
+		throughputSummary.Min = s.schedulingThroughputs[0]
 	}
 	content, err := util.PrettyPrintJSON(throughputSummary)
 	if err != nil {
@@ -182,8 +185,11 @@ func (s *schedulingThroughputMeasurement) stop() {
 }
 
 type schedulingThroughput struct {
+	Perc01 float64 `json:"perc01"`
+	Perc10 float64 `json:"perc10"`
 	Perc50 float64 `json:"perc50"`
 	Perc90 float64 `json:"perc90"`
 	Perc99 float64 `json:"perc99"`
 	Max    float64 `json:"max"`
+	Min    float64 `json:"min"`
 }
