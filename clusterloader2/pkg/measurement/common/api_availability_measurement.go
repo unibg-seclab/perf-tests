@@ -98,7 +98,7 @@ func (a *apiAvailabilityMeasurement) pollHost(hostIP string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("problem with GetPod(): %w", err)
 	}
-	cmd := fmt.Sprintf("curl --connect-timeout %d -s -k -w \"%%{http_code}\" -o /dev/null https://%s:443/readyz", a.hostPollTimeoutSeconds, hostIP)
+	cmd := fmt.Sprintf("curl --connect-timeout %d -s -k -w \"%%{http_code}\" -o /dev/null https://%s:6443/readyz", a.hostPollTimeoutSeconds, hostIP)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(a.hostPollExecTimeoutSeconds)*time.Second)
 	defer cancel()
 	output, err := execservice.RunCommand(ctx, pod, cmd)
