@@ -31,6 +31,7 @@ const (
 	schedulingThroughputPrometheusMeasurementName = "SchedulingThroughputPrometheus"
 
 	maxSchedulingThroughputQuery = `max_over_time(sum(irate(apiserver_request_total{verb="POST", resource="pods", subresource="binding",code="201"}[1m]))[%v:5s])`
+	avgSchedulingThroughputQuery = `avg_over_time(sum(irate(apiserver_request_total{verb="POST", resource="pods", subresource="binding",code="201"}[1m]))[%v:5s])`
 )
 
 func init() {
@@ -70,6 +71,8 @@ func (a *schedulingThroughputGatherer) Gather(executor QueryExecutor, startTime,
 func (a *schedulingThroughputGatherer) getThroughputSummary(executor QueryExecutor, startTime, endTime time.Time) (*schedulingThroughputPrometheus, error) {
 	measurementDuration := endTime.Sub(startTime)
 	promDuration := measurementutil.ToPrometheusTime(measurementDuration)
+
+	// Get max throughput
 	query := fmt.Sprintf(maxSchedulingThroughputQuery, promDuration)
 
 	samples, err := executor.Query(query, endTime)
@@ -81,8 +84,23 @@ func (a *schedulingThroughputGatherer) getThroughputSummary(executor QueryExecut
 	}
 
 	maxSchedulingThroughput := samples[0].Value
+	// Get average throughput
+
+	query = fmt.Sprintf(avgSchedulingThroughputQuery, promDuration)
+
+	samples, err = executor.Query(query, endTime)
+	if err != nil {
+		return nil, err
+	}
+	if len(samples) != 1 {
+		return nil, fmt.Errorf("got unexpected number of samples: %d", len(samples))
+	}
+
+	avgSchedulingThroughput := samples[0].Value
+	// Summary
 	throughputSummary := &schedulingThroughputPrometheus{
 		Max: float64(maxSchedulingThroughput),
+		Avg: float64(avgSchedulingThroughput),
 	}
 
 	return throughputSummary, nil
@@ -102,4 +120,5 @@ func (a *schedulingThroughputGatherer) IsEnabled(_ *measurement.Config) bool {
 
 type schedulingThroughputPrometheus struct {
 	Max float64 `json:"max"`
+	Avg float64 `json:"avg"`
 }
